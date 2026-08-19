@@ -8,7 +8,7 @@ Repositório educacional público. Cada módulo em `NN-nome-do-modulo/` contém:
 - `README.md` — já escrito, contém teoria, lista de exemplos e enunciado do exercício
 - `src/` — onde os exemplos de código devem ser implementados
 - `Cargo.toml` — a criar por módulo (cada módulo é um crate/workspace independente, não um workspace único)
-- Exercício resolvido vive numa **branch separada**, nunca na `main`
+- Exercício resolvido vive na pasta `NN-nome/solucao/`, dentro do mesmo crate do módulo (não em branch separada nem crate à parte)
 
 Sempre leia o `README.md` do módulo antes de implementar qualquer coisa nele — é a fonte da verdade sobre o que cada exemplo deve demonstrar.
 
@@ -37,12 +37,18 @@ Ao implementar um módulo `NN-nome/`:
 5. Se o módulo precisa de infraestrutura local (Kafka, Jaeger), crie `docker-compose.yml` na raiz do módulo
 6. Todo exemplo deve rodar com um único comando `cargo run --bin nome` sem setup manual além do que está documentado no README
 
-## Exercícios e branches de solução
+## Exercícios e pasta de solução
 
 - O enunciado do exercício já está no README do módulo — não o reescreva.
-- Implemente a solução numa branch `solucoes/NN-nome-do-modulo`, nunca na `main`.
-- Antes de criar a branch de solução, confirme que os exemplos principais do módulo (na `main`) já estão completos e passando em `cargo test`.
-- Fluxo: `git checkout -b solucoes/NN-nome-do-modulo`, implemente, commit, volte para `main` com `git checkout main`.
+- Implemente a solução dentro de `NN-nome-do-modulo/solucao/`, no mesmo crate do módulo (mesma `main`, sem branch separada).
+- Antes de implementar a solução, confirme que os exemplos principais do módulo já estão completos e passando em `cargo test`.
+- Cada binário de solução precisa de uma entrada `[[bin]]` explícita no `Cargo.toml` do módulo apontando pro arquivo em `solucao/` (o autodiscovery do cargo só pega `src/bin/*.rs` por padrão), por exemplo:
+  ```toml
+  [[bin]]
+  name = "exercicio_nome"
+  path = "solucao/exercicio_nome.rs"
+  ```
+- Dados de exemplo específicos do exercício continuam em `NN-nome/dados/`, junto dos dados dos exemplos principais.
 
 ## Testes
 

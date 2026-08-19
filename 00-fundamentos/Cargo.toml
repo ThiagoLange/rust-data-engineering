@@ -3,6 +3,10 @@ name = "fundamentos"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "exercicio_contador_palavras"
+path = "solucao/exercicio_contador_palavras.rs"
+
 [dependencies]
 anyhow = "1.0.104"
 rayon = "1.12.0"

@@ -1,0 +1,17 @@
+[package]
+name = "io-e-parsing"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_validador_csv"
+path = "solucao/exercicio_validador_csv.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+csv = "1.4.0"
+polars = { version = "0.55.2", features = ["csv", "lazy"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+winnow = "1.0.4"

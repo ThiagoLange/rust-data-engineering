@@ -1,0 +1,11 @@
+[2026-08-20T10:15:02Z] INFO servico iniciado versao=1.4.2 ambiente=producao
+[2026-08-20T10:15:03Z] INFO conexao com banco estabelecida host=db-01 tentativas=1
+[2026-08-20T10:16:41Z] LOGIN tentativa de acesso user_id=4821 sucesso=true
+[2026-08-20T10:16:59Z] LOGIN tentativa de acesso user_id=4822 sucesso=false motivo=senha_invalida
+[2026-08-20T10:17:10Z] WARN latencia elevada endpoint=/api/pedidos duracao_ms=842
+[2026-08-20T10:18:00Z] ERROR falha ao processar pedido pedido_id=9931 erro=timeout
+linha totalmente malformada sem colchetes nem nivel
+[2026-08-20T10:19:30Z] INFO checkpoint concluido
+[2026-08-20T10:20:05Z LOGIN colchete de fechamento faltando user_id=100 sucesso=true
+[2026-08-20T10:21:12Z] LOGIN tentativa de acesso user_id=abc sucesso=true
+[2026-08-20T10:22:00Z] INFO encerrando servico motivo=deploy

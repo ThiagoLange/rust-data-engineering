@@ -1,2 +1,5 @@
 /target
 **/target
+
+# saída gerada pelo exemplo 03_csv_streaming.rs, não dado de origem
+01-io-e-parsing/dados/produtos_validos.csv

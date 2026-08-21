@@ -1,0 +1,11 @@
+id,nome,preco,em_estoque
+1,Teclado Mecânico,349.90,true
+2,Mouse Óptico,89.50,true
+3,Monitor 27 polegadas,1899.00,false
+4,Cabo HDMI,,true
+5,Headset Gamer,299.99,talvez
+6,Webcam Full HD,199.90,true
+sete,Suporte para Notebook,129.90,true
+8,Mousepad Grande,49.90,true,extra
+9,,79.90,false
+10,Hub USB-C,159.90,true

@@ -81,7 +81,7 @@ Cada binário tem 2-4 testes unitários no próprio arquivo (`#[cfg(test)] mod t
 
 ## Exercício
 
-Implemente um contador de palavras paralelo (`rayon`) que processa múltiplos arquivos de texto simultaneamente e agrega os resultados com segurança (sem `unsafe`, sem race conditions). Solução em `solucoes/00-fundamentos`.
+Implemente um contador de palavras paralelo (`rayon`) que processa múltiplos arquivos de texto simultaneamente e agrega os resultados com segurança (sem `unsafe`, sem race conditions). Solução em [`solucao/exercicio_contador_palavras.rs`](./solucao/exercicio_contador_palavras.rs).
 
 ## Leituras complementares
 

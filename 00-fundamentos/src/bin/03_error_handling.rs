@@ -14,7 +14,7 @@
 //   com contexto encadeável, quando você só quer propagar o erro pra cima
 //   e imprimir uma mensagem legível, sem modelar cada variante.
 
-use anyhow::{Context, Result};
+use anyhow::Context;
 use thiserror::Error;
 
 /// Enum de erro tipado — típico de uma função que seria parte de uma
@@ -77,7 +77,7 @@ fn processar_lote(linhas: &[&str]) -> Result<Vec<(String, f64)>, ParseRegistroEr
 /// variante falhou, só queremos propagar com uma mensagem de contexto
 /// legível pra quem está rodando o binário. `.context(...)` encadeia uma
 /// mensagem amigável na frente do erro original.
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let linhas_validas = ["teclado,250.0", "monitor,900.0"];
     let registros = processar_lote(&linhas_validas).context("falha ao processar lote de vendas")?;
     println!("Registros processados: {registros:?}");

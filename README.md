@@ -2,14 +2,14 @@
 
 Treinamento prático, do básico ao avançado, para usar Rust em engenharia de dados, machine learning, LLMs/agentes de IA, visão computacional e visualização de dados.
 
-Cada módulo é auto-contido: teoria curta + exemplos de código rodáveis + exercício com solução em branch separada.
+Cada módulo é auto-contido: teoria curta + exemplos de código rodáveis + exercício com solução na pasta `solucao/` dentro do mesmo crate.
 
 ## Como usar este repositório
 
 - Siga os módulos em ordem — cada um assume conhecimento do anterior.
 - Todo módulo tem seu próprio README com contexto teórico e links para os crates usados.
 - Exemplos ficam em `src/` dentro da pasta do módulo, prontos para `cargo run`.
-- Exercícios têm enunciado no README e solução na branch `solucoes/NN-nome-do-modulo`.
+- Exercícios têm enunciado no README e solução em `NN-nome-do-modulo/solucao/`.
 
 ## Pré-requisitos
 

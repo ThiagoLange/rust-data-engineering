@@ -19,6 +19,7 @@
 use anyhow::{bail, Context, Result};
 use rayon::prelude::*;
 use std::fs;
+use std::io::{BufWriter, Write};
 use std::time::Instant;
 use thiserror::Error;
 
@@ -54,11 +55,23 @@ fn parsear_argumentos(args: &[String]) -> Result<Argumentos> {
     while i < args.len() {
         match args[i].as_str() {
             "--input" => {
-                input = args.get(i + 1).cloned();
+                let valor = args
+                    .get(i + 1)
+                    .context("faltou valor após --input <caminho>")?;
+                if valor.is_empty() {
+                    bail!("caminho de --input não pode ser vazio");
+                }
+                input = Some(valor.clone());
                 i += 2;
             }
             "--output" => {
-                output = args.get(i + 1).cloned();
+                let valor = args
+                    .get(i + 1)
+                    .context("faltou valor após --output <caminho>")?;
+                if valor.is_empty() {
+                    bail!("caminho de --output não pode ser vazio");
+                }
+                output = Some(valor.clone());
                 i += 2;
             }
             outro => bail!("argumento desconhecido: {outro}"),
@@ -158,14 +171,25 @@ fn normalizar_paralelo(registros: &[Registro]) -> Vec<f64> {
 }
 
 fn escrever_resultado(caminho: &str, registros: &[Registro], normalizados: &[f64]) -> Result<()> {
-    let mut saida = String::from("id,valor,valor_normalizado\n");
+    let arquivo = fs::File::create(caminho)
+        .with_context(|| format!("falha ao criar arquivo de saída {caminho}"))?;
+    let mut writer = BufWriter::new(arquivo);
+
+    writeln!(writer, "id,valor,valor_normalizado")
+        .with_context(|| format!("falha ao escrever cabeçalho em {caminho}"))?;
     for (registro, valor_normalizado) in registros.iter().zip(normalizados) {
-        saida.push_str(&format!(
-            "{},{},{valor_normalizado:.6}\n",
+        writeln!(
+            writer,
+            "{},{},{valor_normalizado:.6}",
             registro.id, registro.valor
-        ));
+        )
+        .with_context(|| format!("falha ao escrever linha em {caminho}"))?;
     }
-    fs::write(caminho, saida).with_context(|| format!("falha ao escrever {caminho}"))
+
+    writer
+        .flush()
+        .with_context(|| format!("falha ao finalizar escrita em {caminho}"))?;
+    Ok(())
 }
 
 fn main() -> Result<()> {

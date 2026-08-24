@@ -1,72 +1,209 @@
 # 00 — Fundamentos de Rust aplicados a dados
 
-**Nível:** Básico
+**Nível:** Básico  
 **Estado do ecossistema:** 🟢 Produção-ready (linguagem core)
+
+---
+
+## O que você vai aprender neste módulo
+
+Depois de estudar este módulo e rodar os exemplos, você será capaz de:
+
+- [ ] Explicar **ownership**, **borrowing** e **lifetimes** com suas próprias palavras.
+- [ ] Decidir quando passar um valor por valor (`Vec<T>`), por referência (`&[T]`) ou por referência mutável (`&mut [T]`).
+- [ ] Criar e usar **traits** e **generics** para escrever código reutilizável.
+- [ ] Escolher entre `thiserror` e `anyhow` para tratar erros de forma idiomática.
+- [ ] Usar `Result` e o operador `?` para propagar erros sem `try/catch`.
+- [ ] Escolher entre threads nativas, `rayon` e `tokio` para cada tipo de trabalho.
+- [ ] Ler e escrever arquivos CSV com Rust de forma segura e performática.
+
+---
+
+## Pré-requisitos
+
+Antes de começar, você precisa saber:
+
+- O básico de programação (variáveis, funções, loops, condicionais).
+- Ter o Rust instalado (`rustup`, `cargo`). Se ainda não tiver, siga [rustup.rs](https://rustup.rs).
+
+**Não precisa saber** de Rust antecipadamente — este módulo começa do zero.
+
+---
 
 ## Por que Rust para dados?
 
-Performance de C/C++ sem garbage collector, mas com segurança de memória garantida em tempo de compilação. Em engenharia de dados isso importa porque pipelines costumam ser I/O-bound *e* CPU-bound ao mesmo tempo — Rust permite paralelismo seguro sem o overhead de um GC pausando o mundo no meio de um processamento de lote grande.
+Rust oferece **performance de C/C++** sem garbage collector, mas com **segurança de memória garantida em tempo de compilação**.
+
+Em engenharia de dados, isso faz diferença real:
+
+| Cenário | Com GC (Python/Java/Go) | Com Rust |
+|---|---|---|
+| Processar 10 milhões de linhas | O GC pode pausar tudo no meio do pipeline | Sem pausas, memória previsível |
+| Pipeline multi-etapa | Duas etapas podem mutar o mesmo lote por engano | O compilador impede isso antes de rodar |
+| Servidor com milhares de conexões | Threads ou GC consomem muita memória | Async com `tokio` é leve e seguro |
+
+> **Exemplo prático:** imagine um pipeline `ler → validar → transformar → gravar`. Em linguagens com GC, é fácil duas etapas segurarem referência pro mesmo lote e uma mutar por baixo da outra. Isso é uma *data race* que costuma aparecer só em produção, sob carga. Em Rust, esse tipo de bug **não compila**.
+
+---
 
 ## Conteúdo
 
 ### 1. Ownership e borrowing na prática
 
-Toda outra linguagem que você já usou resolve "quem é dono desta memória" de um destes jeitos: um garbage collector que fica rastreando referências em background (Python, Java, JS), ou você mesmo gerenciando `malloc`/`free` na mão (C). Rust escolhe um terceiro caminho: **o compilador rastreia posse em tempo de compilação**, sem custo nenhum em runtime.
+Toda linguagem resolve "quem é dono desta memória" de um destes jeitos:
 
-As regras são simples de enunciar, mas mudam como você pensa o código:
+1. **Garbage collector** fica rastreando referências em background (Python, Java, JavaScript).
+2. **Você gerencia na mão** com `malloc`/`free` (C, C++).
+3. **Rust:** o compilador rastreia a posse em tempo de compilação — sem custo em runtime.
 
-- Todo valor tem exatamente **um dono** (uma variável).
-- Quando você passa esse valor pra outra função/variável sem usar `&`, a posse é **transferida** (move) — o dono anterior não pode mais usá-lo.
-- Você pode **emprestar** (borrow) o valor com `&valor` (referência imutável, quantas quiser ao mesmo tempo) ou `&mut valor` (referência mutável, só uma por vez, e nunca junto com uma imutável).
+#### As três regras do ownership
 
-Por que isso importa em dados: um pipeline típico passa um lote de registros por várias etapas (`ler → validar → transformar → gravar`). Em linguagens com GC, é fácil duas etapas acabarem segurando referência pro "mesmo" lote e uma mutar por baixo da outra — isso é uma data race, e em geral só aparece em produção, sob carga, de forma intermitente. Em Rust, esse tipo de bug **não compila**. O compilador rejeita o programa antes mesmo dele rodar.
+> 📦 **Regra 1:** todo valor tem exatamente **um dono**.
+>
+> 📦 **Regra 2:** quando você passa o valor sem `&`, a posse é **transferida** (*move*). O dono anterior não pode mais usá-lo.
+>
+> 📦 **Regra 3:** você pode emprestar com `&valor` (imutável, vários ao mesmo tempo) ou `&mut valor` (mutável, só um por vez, e nunca junto com imutáveis).
 
-O exemplo `01_ownership_borrowing.rs` mostra as três situações lado a lado: uma função que toma posse (`Vec<T>` por valor), uma que só empresta pra ler (`&[T]`), e uma que empresta pra mutar in-place (`&mut [T]`) — com um caso comentado de código que *não compilaria* se descomentado, pra você ver o erro que o compilador dá.
+#### Quando usar cada um?
+
+| Sintaxe | Significa | Use quando... |
+|---|---|---|
+| `valor` | **Move**: transfere a posse | A função vai consumir o dado e você não precisa mais dele |
+| `&valor` | **Borrow imutável**: empresta pra ler | Só quer ler, quer continuar usando depois |
+| `&mut valor` | **Borrow mutável**: empresta pra alterar | Precisa modificar in-place sem criar cópia |
+
+> 💡 **Dica:** prefira `&[T]` em vez de `Vec<T>` quando a função só vai ler. Assim você não força quem chama a transferir a posse do vetor.
+
+> ⚠️ **Erro comum:** tentar usar uma variável depois de movê-la. O compilador vai reclamar com `value borrowed here after move`. Isso é uma feature, não um bug — ele está te protegendo.
+
+O exemplo [`01_ownership_borrowing.rs`](./src/bin/01_ownership_borrowing.rs) mostra as três situações lado a lado, com um caso comentado de código que *não compilaria* se descomentado.
+
+---
 
 ### 2. Traits e generics
 
-**Trait** é um contrato: "todo tipo que implementar este trait tem estes métodos". Se você já usou interface (Java/TypeScript/Go) ou protocol (Python/Swift), é a mesma ideia. **Generics** é escrever uma função/struct que funciona pra qualquer tipo que satisfaça um contrato, sem repetir a lógica pra cada tipo concreto.
+**Trait** é um contrato: "todo tipo que implementar este trait tem estes métodos". Se você já usou `interface` (Java/TypeScript/Go) ou `protocol` (Python/Swift), é a mesma ideia.
 
-Isso importa em engenharia de dados porque pipelines de transformação se repetem: normalizar uma coluna numérica, formatar uma coluna de texto, validar um campo de data — é sempre "pega um valor, devolve outro valor transformado, encadeia várias dessas". Em vez de escrever um loop `for` diferente pra cada tipo de transformação, você define um trait (`Transform<T>`) e escreve o loop **uma vez**, genérico sobre `T`.
+**Generics** é escrever uma função ou struct que funciona para qualquer tipo que satisfaça um contrato, sem repetir código.
 
-Dois detalhes que aparecem no exemplo:
+#### Por que isso importa em dados?
 
-- **Generics estáticos** (`fn aplicar<T, Tr: Transform<T>>(...)`): o compilador sabe exatamente qual tipo concreto é usado em cada chamada e gera código especializado pra cada um (monomorphization) — zero custo em runtime comparado a copiar e colar o loop.
-- **Trait objects** (`Box<dyn Transform<f64>>`): quando a escolha de qual implementação usar só é conhecida em runtime (ex: um pipeline configurável por arquivo de config), generics estáticos não servem — você paga uma pequena indireção (vtable) em troca de flexibilidade.
+Pipelines de transformação se repetem:
+
+- normalizar uma coluna numérica;
+- formatar uma coluna de texto;
+- validar um campo de data.
+
+Em vez de escrever um `for` diferente para cada transformação, você define um trait (`Transform<T>`) e escreve o loop **uma vez**, genérico sobre `T`.
+
+#### Dois padrões que você vai ver
+
+1. **Generics estáticos** (`fn aplicar<T, Tr: Transform<T>>(...)`):
+   - O compilador sabe o tipo concreto em cada chamada.
+   - Gera código especializado para cada uso (*monomorphization*).
+   - **Zero custo em runtime** comparado a copiar e colar o loop.
+
+2. **Trait objects** (`Box<dyn Transform<f64>>`):
+   - A escolha da implementação só é conhecida em runtime.
+   - Útil para pipelines configuráveis por arquivo.
+   - Paga uma pequena indireção (*vtable*) em troca de flexibilidade.
+
+> 💡 **Dica:** comece com generics estáticos. Só use `Box<dyn ...>` quando realmente precisar de escolha em runtime.
+
+Veja o exemplo [`02_traits_generics.rs`](./src/bin/02_traits_generics.rs).
+
+---
 
 ### 3. Error handling
 
-Rust não tem exceptions. Toda função que pode falhar retorna `Result<T, E>`: `Ok(valor)` ou `Err(erro)`. Não existe try/catch escondido nem exceção que escapa silenciosamente — o compilador **obriga** você a lidar com o `Result` de alguma forma antes de extrair o valor de dentro dele.
+Rust não tem exceptions. Toda função que pode falhar retorna `Result<T, E>`:
 
-Duas ferramentas, dois papéis, e os dois aparecem no exemplo:
+- `Ok(valor)` quando dá certo;
+- `Err(erro)` quando dá errado.
 
-- **`thiserror`**, pra código reutilizável (bibliotecas, parsers, módulos internos): você define um `enum` com uma variante por tipo de erro possível. Quem chama a função pode dar `match` no `Err` e reagir diferente por variante (ex: "linha vazia eu ignoro, valor corrompido eu aborto o lote").
-- **`anyhow`**, pra binários/prototipagem: um `Result<T, anyhow::Error>` genérico, com `.context("mensagem")` pra ir encadeando explicações legíveis conforme o erro sobe a pilha de chamadas. Você usa quando só quer propagar o erro pra cima e imprimir algo útil pro usuário do CLI, sem modelar cada variante.
+O compilador **obriga** você a lidar com o `Result` antes de usar o valor de dentro.
 
-O operador `?` no fim de uma expressão (`funcao_que_pode_falhar()?`) é o que faz a propagação: se o resultado for `Err`, a função atual já retorna esse erro pra quem a chamou; se for `Ok`, o `?` "desembrulha" o valor e o código continua. É o equivalente Rust de um `try/catch` automático, mas visível no tipo de retorno da função — dá pra saber só lendo a assinatura se ela pode falhar.
+#### Duas ferramentas, dois papéis
+
+| Ferramenta | Quando usar | Exemplo no módulo |
+|---|---|---|
+| **`thiserror`** | Código reutilizável (bibliotecas, parsers) | Definir `ParseRegistroError` com variantes específicas |
+| **`anyhow`** | Binários e prototipagem | No `main`, propagar erros com mensagens de contexto |
+
+#### O operador `?`
+
+```rust
+let valor = funcao_que_pode_falhar()?;
+```
+
+- Se o resultado for `Err`, a função atual retorna esse erro.
+- Se for `Ok`, o `?` "desembrulha" o valor e continua.
+
+> 💡 **Dica:** leia a assinatura da função. Se ela retorna `Result<T, E>`, você sabe que pode falhar. Não precisa adivinhar.
+
+> ⚠️ **Erro comum:** usar `.unwrap()` fora de testes. Em produção, `unwrap` vira pânico. Use `?`, `match` ou `.context()`.
+
+Veja o exemplo [`03_error_handling.rs`](./src/bin/03_error_handling.rs).
+
+---
 
 ### 4. Concorrência
 
-Rust dá duas ferramentas de alto nível pra concorrência, cada uma pro tipo certo de trabalho, e as duas são construídas sobre as mesmas primitivas de baixo nível (`std::thread`, `Arc`, `Mutex`, `mpsc::channel`) que você também vai ver neste módulo:
+Rust oferece três níveis de concorrência. Escolha o certo para cada trabalho:
 
-- **Threads nativas + `std::sync`**: `Arc<T>` ("Atomically Reference Counted") deixa várias threads serem donas do mesmo dado ao mesmo tempo; `Mutex<T>` garante que só uma thread por vez acessa o valor lá dentro. `mpsc::channel` é uma alternativa que evita Mutex por completo: threads se comunicam mandando mensagens por um canal, em vez de compartilhar memória diretamente. É a camada que `rayon` e `tokio` escondem de você — vale entender uma vez pra saber o que está acontecendo por baixo.
-- **`rayon`** — paralelismo de **dados**, pra trabalho **CPU-bound**. Trocar `.iter()` por `.par_iter()` já distribui o trabalho entre um thread pool dimensionado pro número de cores da máquina. Ideal pra "transformar 10 milhões de linhas".
-- **`tokio`** — concorrência **assíncrona** (`async`/`.await`), pra trabalho **I/O-bound**. Uma thread só consegue ter milhares de requisições "em voo" ao mesmo tempo, porque enquanto uma espera resposta de rede/disco, a CPU processa outra — nenhuma thread fica bloqueada esperando à toa. Ideal pra "mil requisições HTTP simultâneas".
+| Abordagem | Tipo de trabalho | Quando usar |
+|---|---|---|
+| **Threads nativas + `std::sync`** | Controle manual | Quando você precisa entender o que `rayon` e `tokio` escondem |
+| **`rayon`** | Paralelismo de dados, CPU-bound | Transformar milhões de linhas, cálculos numéricos |
+| **`tokio`** | Assíncrono, I/O-bound | Milhares de requisições HTTP, leitura de rede/disco |
 
-Regra prática pra decidir qual usar: **rayon para CPU-bound, tokio para I/O-bound**. Usar o errado não quebra o código, mas desperdiça a vantagem de cada abordagem — rayon numa tarefa I/O-bound só ocupa threads inteiras esperando rede à toa; tokio com uma tarefa CPU-bound pesada dentro de uma única task trava as outras tasks daquele worker, já que não há preempção automática entre `.await` points.
+#### Threads nativas (`std::sync`)
+
+- `Arc<T>`: várias threads "dono" do mesmo dado ao mesmo tempo.
+- `Mutex<T>`: só uma thread por vez acessa o valor.
+- `mpsc::channel`: threads se comunicam por mensagens, sem compartilhar memória.
+
+Essas primitivas são a base do `rayon` e do `tokio`. Vale entender uma vez.
+
+#### Regra prática
+
+> **rayon para CPU-bound, tokio para I/O-bound.**
+>
+> Usar o errado não quebra o código, mas desperdiça a vantagem: rayon em I/O ocupa threads esperando rede; tokio com CPU pesado numa única task trava as outras tasks.
+
+Veja os exemplos [`04_concorrencia_threads.rs`](./src/bin/04_concorrencia_threads.rs) e [`05_concorrencia_rayon_tokio.rs`](./src/bin/05_concorrencia_rayon_tokio.rs).
+
+---
+
+## Como estudar este módulo
+
+1. Leia cada seção acima **antes** de abrir o exemplo.
+2. Abra o código em `src/bin/NN_nome.rs` e leia os comentários. Eles explicam o *porquê*, não só o *o quê*.
+3. Rode o exemplo:
+   ```bash
+   cargo run --bin 01_ownership_borrowing
+   ```
+4. Mude algo e veja o que o compilador diz. Rust é uma ótima ferramenta de aprendizado porque os erros são específicos.
+5. Rode os testes:
+   ```bash
+   cargo test
+   ```
+6. Só depois vá para o próximo exemplo.
+
+---
 
 ## Exemplos
 
-Cada ponto do "Conteúdo" acima virou um binário próprio em `src/bin/`, com código comentado linha a linha pensando em quem está começando em Rust — os comentários explicam o *porquê* de cada decisão, não só o *o quê*. Rode em ordem, cada um é independente:
+Cada ponto do conteúdo virou um binário separado em `src/bin/`. Rode em ordem — cada um é independente, mas os conceitos se acumulam.
 
-| # | Binário | O que mostra na prática |
-|---|---------|--------------------------|
-| 1 | [`01_ownership_borrowing.rs`](./src/bin/01_ownership_borrowing.rs) | Move vs `&` vs `&mut` num pipeline de registros de venda; um caso comentado de código que não compilaria |
-| 2 | [`02_traits_generics.rs`](./src/bin/02_traits_generics.rs) | `trait Transform<T>` implementado pra `f64` e `String`; função genérica `aplicar_em_lote`; trait object `Box<dyn Transform<f64>>` |
-| 3 | [`03_error_handling.rs`](./src/bin/03_error_handling.rs) | Erro tipado com `thiserror` (`ParseRegistroError`), propagação com `?`, `anyhow::Context` no `main`, tratamento explícito com `match` |
-| 4 | [`04_concorrencia_threads.rs`](./src/bin/04_concorrencia_threads.rs) | Soma paralela com `Arc<Mutex<_>>` e com `mpsc::channel`, comparando os dois padrões |
-| 5 | [`05_concorrencia_rayon_tokio.rs`](./src/bin/05_concorrencia_rayon_tokio.rs) | `rayon::par_iter` vs sequencial num trabalho CPU-bound; `tokio::spawn` concorrente vs sequencial num trabalho I/O-bound simulado, com tempos medidos |
-| 6 | [`06_normalizador_csv.rs`](./src/bin/06_normalizador_csv.rs) | **Exemplo prático do módulo**: CLI completo que lê `dados/vendas.csv`, normaliza a coluna `valor` (min-max), compara tempo sequencial vs rayon, e escreve o resultado |
+| # | Binário | Conceito-chave |
+|---|---------|----------------|
+| 1 | [`01_ownership_borrowing.rs`](./src/bin/01_ownership_borrowing.rs) | Move vs `&` vs `&mut` |
+| 2 | [`02_traits_generics.rs`](./src/bin/02_traits_generics.rs) | `trait Transform<T>`, generics e trait objects |
+| 3 | [`03_error_handling.rs`](./src/bin/03_error_handling.rs) | `thiserror`, `anyhow`, `?`, `match` |
+| 4 | [`04_concorrencia_threads.rs`](./src/bin/04_concorrencia_threads.rs) | `Arc<Mutex<_>>` e `mpsc::channel` |
+| 5 | [`05_concorrencia_rayon_tokio.rs`](./src/bin/05_concorrencia_rayon_tokio.rs) | `rayon` para CPU-bound, `tokio` para I/O-bound |
+| 6 | [`06_normalizador_csv.rs`](./src/bin/06_normalizador_csv.rs) | CLI completo: parse CSV, normalização min-max, escrita com `BufWriter` |
 
 ```bash
 cargo run --bin 01_ownership_borrowing
@@ -77,14 +214,62 @@ cargo run --bin 05_concorrencia_rayon_tokio
 cargo run --release --bin 06_normalizador_csv -- --input dados/vendas.csv --output resultado.csv
 ```
 
-Cada binário tem 2-4 testes unitários no próprio arquivo (`#[cfg(test)] mod tests`), cobrindo o caminho feliz e casos de borda (ex: divisão por zero na normalização, valor não-numérico no parse). Rode `cargo test` pra ver todos passando de uma vez.
+Cada binário tem 2–5 testes unitários no próprio arquivo (`#[cfg(test)] mod tests`), cobrindo o caminho feliz e casos de borda. Rode `cargo test` para ver todos passando de uma vez.
+
+---
 
 ## Exercício
 
-Implemente um contador de palavras paralelo (`rayon`) que processa múltiplos arquivos de texto simultaneamente e agrega os resultados com segurança (sem `unsafe`, sem race conditions). Solução em [`solucao/exercicio_contador_palavras.rs`](./solucao/exercicio_contador_palavras.rs).
+Implemente um contador de palavras paralelo com `rayon`.
+
+### Requisitos
+
+- [ ] Leia todos os arquivos `.md` e `.txt` de um diretório passado por CLI. Se nenhum diretório for passado, use `dados/textos`.
+- [ ] Conte a frequência de cada palavra em cada arquivo.
+- [ ] Normalize as palavras: minúsculas e sem pontuação/símbolos de markdown (`#`, `*`, `-`, etc.).
+- [ ] Agregue as contagens de todos os arquivos de forma segura — sem `unsafe`, sem `Mutex`, sem race conditions.
+- [ ] Imprima o **top 10 palavras mais frequentes** e o **total de palavras distintas**.
+
+### Dicas
+
+- Use o padrão **map paralelo → reduce**: cada arquivo produz seu próprio `HashMap`; depois combine os mapas.
+- `rayon::prelude::*` traz `.par_iter()`.
+- Para ordenar pelo mais frequente, use `sort_by` comparando as contagens.
+
+### Como rodar
+
+```bash
+cargo run --release --bin exercicio_contador_palavras -- dados/textos
+```
+
+### Solução
+
+A solução está em [`solucao/exercicio_contador_palavras.rs`](./solucao/exercicio_contador_palavras.rs). Só olhe depois de tentar implementar sozinho.
+
+---
+
+## Checklist de aprendizado
+
+Antes de ir para o módulo 01, confira se você consegue:
+
+- [ ] Explicar por que `total_vendas(vendas)` impede de usar `vendas` depois.
+- [ ] Dizer a diferença entre `&[T]` e `&mut [T]`.
+- [ ] Criar um trait e implementá-lo para dois tipos diferentes.
+- [ ] Escrever uma função genérica sobre um trait.
+- [ ] Explicar quando usar `thiserror` e quando usar `anyhow`.
+- [ ] Propagar erros com `?` em vez de `unwrap`.
+- [ ] Escolher entre `rayon` e `tokio` para um cenário novo.
+- [ ] Ler e escrever um CSV com normalização.
+
+Se algum item ficou nebuloso, volte ao exemplo correspondente e mexa no código.
+
+---
 
 ## Leituras complementares
 
-- [The Rust Book — Ownership](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)
+- [The Rust Book — Understanding Ownership](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)
+- [The Rust Book — Traits](https://doc.rust-lang.org/book/ch10-02-traits.html)
+- [The Rust Book — Error Handling](https://doc.rust-lang.org/book/ch09-00-error-handling.html)
+- [The Rust Book — Fearless Concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html)
 - [Rayon docs](https://docs.rs/rayon)
 - [Tokio tutorial](https://tokio.rs/tokio/tutorial)

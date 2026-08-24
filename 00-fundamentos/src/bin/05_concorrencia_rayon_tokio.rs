@@ -19,6 +19,7 @@
 // pra I/O só ocupa threads esperando; tokio pra CPU-bound pesado numa task
 // só trava as outras tasks daquele worker).
 
+use anyhow::Result;
 use rayon::prelude::*;
 use std::time::{Duration, Instant};
 
@@ -69,24 +70,22 @@ async fn buscar_todos_sequencial(ids: &[u32]) -> Vec<u32> {
 /// Evitamos o crate `futures` (só pra ter `join_all`) pra manter as
 /// dependências do módulo mínimas, como pede o CLAUDE.md do repo —
 /// `tokio::spawn` sozinho já resolve.
-async fn buscar_todos_concorrente(ids: &[u32]) -> Vec<u32> {
+async fn buscar_todos_concorrente(ids: &[u32]) -> Result<Vec<u32>> {
     let handles: Vec<_> = ids
         .iter()
         .map(|&id| tokio::spawn(buscar_registro_remoto(id)))
         .collect();
     let mut resultados = Vec::with_capacity(handles.len());
     for handle in handles {
-        resultados.push(
-            handle
-                .await
-                .expect("task não deveria ter entrado em pânico"),
-        );
+        // `await` devolve `Result<u32, JoinError>`: o erro indica que a task
+        // entrou em pânico. Propagamos com `?` em vez de `expect`.
+        resultados.push(handle.await?);
     }
-    resultados
+    Ok(resultados)
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // --- CPU-bound: rayon ---
     let entradas: Vec<u64> = (0..2_000).map(|i| 5_000 + (i % 50)).collect();
 
@@ -109,11 +108,12 @@ async fn main() {
     let duracao_sequencial_io = inicio.elapsed();
 
     let inicio = Instant::now();
-    let _ = buscar_todos_concorrente(&ids).await;
+    let _ = buscar_todos_concorrente(&ids).await?;
     let duracao_concorrente_io = inicio.elapsed();
 
     println!("[I/O-bound] sequencial: {duracao_sequencial_io:?} | concorrente: {duracao_concorrente_io:?}");
     assert!(duracao_concorrente_io < duracao_sequencial_io);
+    Ok(())
 }
 
 #[cfg(test)]
@@ -139,7 +139,7 @@ mod tests {
     async fn busca_sequencial_e_concorrente_retornam_mesmos_dados() {
         let ids = vec![1, 2, 3];
         let seq = buscar_todos_sequencial(&ids).await;
-        let conc = buscar_todos_concorrente(&ids).await;
+        let conc = buscar_todos_concorrente(&ids).await.expect("ok");
         assert_eq!(seq, conc);
         assert_eq!(seq, vec![10, 20, 30]);
     }

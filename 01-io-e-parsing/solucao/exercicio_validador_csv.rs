@@ -50,6 +50,8 @@ enum SchemaError {
     FormatoInvalido(String),
     #[error("tipo de coluna desconhecido: '{0}' (use texto, inteiro, decimal ou booleano)")]
     TipoDesconhecido(String),
+    #[error("valor de obrigatoriedade inválido: '{0}' (use true ou false)")]
+    ObrigatoriedadeInvalida(String),
     #[error("coluna '{0}' declarada no schema não existe no cabeçalho do CSV")]
     ColunaAusenteNoCsv(String),
 }
@@ -84,7 +86,9 @@ fn parsear_coluna_schema(declaracao: &str) -> Result<ColunaSchema, SchemaError> 
         outro => return Err(SchemaError::TipoDesconhecido(outro.to_string())),
     };
 
-    let obrigatorio = obrigatorio_bruto.parse::<bool>().unwrap_or(false);
+    let obrigatorio = obrigatorio_bruto
+        .parse::<bool>()
+        .map_err(|_| SchemaError::ObrigatoriedadeInvalida(obrigatorio_bruto.to_string()))?;
 
     Ok(ColunaSchema {
         nome: nome.to_string(),
@@ -348,6 +352,12 @@ mod tests {
     fn coluna_do_schema_ausente_no_csv_falha_antes_de_validar_linhas() {
         let caminho = escrever_temp("id,nome\n1,Caneta\n");
         let resultado = validar_csv(&caminho, &schema_produtos());
+        assert!(resultado.is_err());
+    }
+
+    #[test]
+    fn obrigatoriedade_invalida_no_schema_falha() {
+        let resultado = parsear_schema("id:inteiro:sim");
         assert!(resultado.is_err());
     }
 }

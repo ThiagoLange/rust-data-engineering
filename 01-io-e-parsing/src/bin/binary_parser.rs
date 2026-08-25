@@ -117,6 +117,16 @@ fn parse_arquivo(bytes: &[u8]) -> Result<(Cabecalho, Vec<Registro>), BinaryParse
         registros.push(parse_registro(&mut entrada)?);
     }
 
+    // Se sobraram bytes após ler todos os registros, o arquivo está corrompido
+    // ou foi gerado com um formato diferente. Rejeitar explicitamente evita
+    // ignorar dados extras que poderiam indicar um bug no produtor.
+    if !entrada.is_empty() {
+        return Err(BinaryParseError::Sintaxe(format!(
+            "sobraram {} bytes após o último registro",
+            entrada.len()
+        )));
+    }
+
     Ok((cabecalho, registros))
 }
 
@@ -202,5 +212,12 @@ mod tests {
         let bytes = fs::read("dados/binario/registros.bin").unwrap();
         let (cabecalho, registros) = parse_arquivo(&bytes).unwrap();
         assert_eq!(cabecalho.num_registros as usize, registros.len());
+    }
+
+    #[test]
+    fn bytes_alem_do_esperado_sao_rejeitados() {
+        let mut bytes = montar_arquivo(&[(1, 1.0, 1)]);
+        bytes.extend_from_slice(b"lixo"); // 4 bytes a mais no final
+        assert!(parse_arquivo(&bytes).is_err());
     }
 }

@@ -106,7 +106,8 @@ mod tests {
 
     // Pequeno gerador de "aleatoriedade" só para variar o nome do arquivo
     // temporário entre execuções de teste em paralelo, sem trazer uma dep
-    // extra (rand) só para isso.
+    // extra (rand) só para isso. Fica dentro de `#[cfg(test)]` porque só é
+    // usado pelos testes — não deve compilar no binário de produção.
     fn rand_seed() -> u32 {
         use std::time::{SystemTime, UNIX_EPOCH};
         SystemTime::now()

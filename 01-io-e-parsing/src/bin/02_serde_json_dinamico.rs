@@ -75,7 +75,11 @@ fn main() -> anyhow::Result<()> {
 
     let eventos: Value = serde_json::from_str(bruto)?;
 
-    let lista = eventos.as_array().expect("esperava um array de eventos");
+    // `as_array()` devolve `Option<&Vec<Value>>`. Em vez de `expect`,
+    // convertemos para um erro do anyhow com `ok_or_else` e propagamos com `?`.
+    let lista = eventos
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("o JSON de entrada não é um array de eventos"))?;
     for evento in lista {
         println!("{}", resumir_evento(evento));
     }

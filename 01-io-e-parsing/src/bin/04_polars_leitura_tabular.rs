@@ -18,6 +18,18 @@
 use polars::prelude::*;
 use std::path::Path;
 
+/// Força a conversão da coluna `em_estoque` para booleano.
+///
+/// O CSV de exemplo tem `em_estoque` como `str` porque contém o valor
+/// inválido "talvez". Sem esse cast, o filtro `eq(lit(true))` compararia
+/// strings com booleanos de forma implícita — o resultado pode mudar entre
+/// versões do Polars e confunde quem está aprendendo. Com `.cast(Boolean)`,
+/// valores como "true"/"false" viram `true`/`false`, valores inválidos
+/// viram `null` e são descartados pelo filtro.
+fn para_bool(expr: Expr) -> Expr {
+    expr.cast(DataType::Boolean)
+}
+
 /// Lê o CSV de produtos como um `LazyFrame`. `LazyCsvReader` não lê o
 /// arquivo aqui — apenas registra a intenção de lê-lo, permitindo que o
 /// Polars monte um plano de execução com o restante das operações
@@ -39,7 +51,7 @@ fn ler_produtos(caminho: &Path) -> anyhow::Result<LazyFrame> {
 /// sem executar nada até o `.collect()` do chamador.
 fn produtos_caros_em_estoque(lazy: LazyFrame, preco_minimo: f64) -> LazyFrame {
     lazy.filter(
-        col("em_estoque")
+        para_bool(col("em_estoque"))
             .eq(lit(true))
             .and(col("preco").gt(lit(preco_minimo))),
     )

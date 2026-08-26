@@ -1,0 +1,16 @@
+[package]
+name = "processamento-dados"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_rolling_window"
+path = "solucao/exercicio_rolling_window.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+arrow = "59.2.0"
+datafusion = "55.0.0"
+polars = { version = "0.55.2", features = ["csv", "lazy", "streaming", "temporal", "dtype-datetime", "dynamic_group_by", "strings", "parquet"] }
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }

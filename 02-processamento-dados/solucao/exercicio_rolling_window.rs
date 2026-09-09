@@ -81,7 +81,10 @@ fn main() -> anyhow::Result<()> {
     let mut df = rolling_window_7d(lf)?;
     println!("{}", df.head(Some(20)));
 
-    std::fs::create_dir_all(caminho_saida.parent().unwrap())?;
+    let parent = caminho_saida.parent().ok_or_else(|| {
+        anyhow::anyhow!("caminho de saída sem parent: {}", caminho_saida.display())
+    })?;
+    std::fs::create_dir_all(parent)?;
     let mut arquivo = std::fs::File::create(caminho_saida)?;
     ParquetWriter::new(&mut arquivo).finish(&mut df)?;
 

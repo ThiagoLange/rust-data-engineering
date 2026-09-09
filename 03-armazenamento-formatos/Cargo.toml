@@ -1,0 +1,23 @@
+[package]
+name = "armazenamento-formatos"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_delta_merge_timetravel"
+path = "solucao/exercicio_delta_merge_timetravel.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+arrow = "58.0.0"
+arrow-array = "58.0.0"
+arrow-csv = "58.0.0"
+arrow-schema = "58.0.0"
+datafusion = "53.1.0"
+deltalake = { version = "0.32.4", features = ["datafusion"] }
+futures = "0.3.34"
+object_store = "0.11.2"
+parquet = "58.0.0"
+polars = { version = "0.55.2", features = ["csv", "lazy", "parquet"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
+url = "2.5.7"

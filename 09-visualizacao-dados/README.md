@@ -15,22 +15,25 @@
 - **egui**: ferramentas internas interativas, dashboards de monitoramento local, prototipagem rápida de UI sobre dados
 - **Exportar para D3/Grafana**: quando o consumidor final é um time que já usa essas ferramentas, ou quando a visualização precisa ser acessível via navegador para múltiplos usuários
 
-## Exemplo prático 1: Relatório automatizado
+## Exemplos práticos
 
-`src/report_generator.rs`: consome a saída do pipeline do Módulo 2 (dados agregados) e gera automaticamente um conjunto de gráficos (série temporal, distribuição) como PNG, usando `plotters` integrado com Polars.
-
-## Exemplo prático 2: Dashboard interativo
-
-`src/dashboard.rs`: aplicação `egui` que carrega os dados processados e permite filtrar/explorar interativamente (sliders, dropdowns) com os gráficos atualizando em tempo real.
+| Binário | Arquivo | O que demonstra |
+|---------|---------|----------------|
+| `01_report_generator` | `src/bin/01_report_generator.rs` | Relatório batch: consome CSV/Parquet do Módulo 2, gera `serie_temporal.png` + `histograma.png` via `plotters`, exporta `dados_d3.json` para D3/Grafana |
+| `02_dashboard` | `src/bin/02_dashboard.rs` | Dashboard `egui`/`eframe`: sliders, ComboBox de categoria, tabela filtrada, barras de progresso |
 
 ```bash
-cargo run --bin report_generator -- --input dados_processados.parquet
-cargo run --bin dashboard -- --input dados_processados.parquet
+cargo run --bin 01_report_generator -- --input ../02-processamento-dados/dados/series_temporais.csv
+cargo run --bin 02_dashboard ../02-processamento-dados/dados/series_temporais.csv
 ```
 
 ## Exercício
 
-Estenda o dashboard `egui` para consumir dados em tempo real do pipeline de streaming do Módulo 4 (via um channel Tokio), atualizando os gráficos conforme novos eventos chegam. Solução em `solucoes/09-visualizacao-dados`.
+Estenda o dashboard `egui` para consumir dados em tempo real do pipeline de streaming do Módulo 4 (via um channel Tokio), atualizando os gráficos conforme novos eventos chegam. Solução em `solucao/exercicio_dashboard_streaming.rs` (bin `exercicio_dashboard_streaming`) — produtor `mpsc` a cada 200ms + `try_recv` com `request_repaint`.
+
+```bash
+cargo run --bin exercicio_dashboard_streaming
+```
 
 ## Leituras complementares
 

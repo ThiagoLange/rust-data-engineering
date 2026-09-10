@@ -9,3 +9,5 @@
 06-machine-learning/models/*.json
 06-machine-learning/models/*.onnx
 06-machine-learning/dados/saida/
+08-visao-computacional/dados/saida/
+08-visao-computacional/dados/tmp_*/

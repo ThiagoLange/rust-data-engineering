@@ -9,15 +9,22 @@ path = "solucao/exercicio_delta_merge_timetravel.rs"
 
 [dependencies]
 anyhow = "1.0.104"
+apache-avro = "0.22.0"
+csv = "1.4.0"
 arrow = "58.0.0"
 arrow-array = "58.0.0"
 arrow-csv = "58.0.0"
+arrow-ipc = "58.0.0"
 arrow-schema = "58.0.0"
 datafusion = "53.1.0"
 deltalake = { version = "0.32.4", features = ["datafusion"] }
 futures = "0.3.34"
+iceberg = "0.10.1"
 object_store = "0.11.2"
 parquet = "58.0.0"
 polars = { version = "0.55.2", features = ["csv", "lazy", "parquet"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+tempfile = "3.23.0"
 tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros"] }
 url = "2.5.7"

@@ -21,22 +21,27 @@
    - `llama-cpp-rs` — bindings para llama.cpp, rodar modelos GGUF localmente
    - `candle` com modelos GGUF — alternativa mais "pura Rust", sem depender de bindings C++
 
-## Exemplo prático 1: Pipeline RAG completo
+## Exemplos práticos
 
-`src/rag_pipeline.rs`: ingestão de documentos (Markdown/PDF) → chunking → geração de embeddings → indexação HNSW (via `hnsw_rs`, mesma lib usada no AI-Lake) → busca semântica → montagem de prompt com contexto recuperado → chamada ao LLM.
-
-## Exemplo prático 2: Agente com tool calling
-
-`src/agent_tools.rs`: agente construído com `rig` que tem acesso a duas ferramentas (busca em um índice de dados local e uma calculadora), decide quando chamar cada uma, e encadeia os resultados numa resposta final.
+| Binário | Arquivo | O que demonstra |
+|---------|---------|----------------|
+| `01_rag_pipeline` | `src/bin/01_rag_pipeline.rs` | Ingestão Markdown → `chunk_text` (500/50) → embeddings (`async-openai` se `OPENAI_API_KEY` ou `fake_embed` sintético) → HNSW `hnsw_rs` (`Hnsw<DistDot>`, mesmo footer AI-Lake) → busca `top-k` + reranking lexical → `call_llm` (`async-openai`/`reqwest` Anthropic ou simulado) — custo limitado a 512 tokens |
+| `02_agent_tools` | `src/bin/02_agent_tools.rs` | Agente com 2 ferramentas (`buscar_dados` + `calculadora`), schemas via `schemars`, decisão por heurística, encadeamento, `schemars::schema_for` — alternativa leve a `rig` |
 
 ```bash
-cargo run --bin rag_pipeline -- --docs ./documentos
-cargo run --bin agent_tools -- "Quantos registros tem a tabela X e qual a média da coluna Y?"
+cargo run --bin 01_rag_pipeline -- --docs ./documentos --query "O que é Rust?"
+cargo run --bin 02_agent_tools -- "Quantos registros tem a tabela vendas e qual a média de preco_unitario?"
+# com API real (ver .env.example):
+# OPENAI_API_KEY=sk-... cargo run --bin 01_rag_pipeline
 ```
 
 ## Exercício
 
-Estenda o pipeline RAG para usar embeddings duplos (um para busca semântica, outro otimizado para reranking) — o mesmo padrão do `LlmContextSchema` usado no AI-Lake para melhorar qualidade de contexto em LLMs. Compare a qualidade dos resultados recuperados com/sem o embedding secundário. Solução em `solucoes/07-llm-e-agentes-ia`.
+Estenda o pipeline RAG para usar embeddings duplos (um para busca semântica, outro otimizado para reranking) — mesmo padrão do `LlmContextSchema` do AI-Lake. Solução em `solucao/exercicio_double_embeddings.rs` (bin `exercicio_double_embeddings`) — `fake_embed` (busca) + `fake_embed_rerank` (reranking) com 2 HNSW (`DistL2`), `recall@k` com/sem segundo embedding, footer dual no AI-Lake.
+
+```bash
+cargo run --bin exercicio_double_embeddings
+```
 
 ## Leituras complementares
 

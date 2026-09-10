@@ -1,0 +1,28 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.1.8
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      - 19092:19092
+      - 8082:8082
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy'"]
+      interval: 10s
+      retries: 5
+
+  # Cria tópico automaticamente no start
+  init:
+    image: redpandadata/redpanda:v24.1.8
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: -c "rpk --brokers redpanda:9092 topic create events --partitions 3 || true && echo 'topic events ready'"

@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package orchestrator;
+
+// Serviço do coordenador — workers se registram, pedem trabalho e reportam progresso.
+service Orchestrator {
+  rpc RegisterWorker(RegisterRequest) returns (RegisterResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetWork(GetWorkRequest) returns (GetWorkResponse);
+  // Streaming de progresso: worker envia updates contínuos, coordenador ack ao final
+  rpc ReportProgress(stream ProgressRequest) returns (ProgressResponse);
+}
+
+message RegisterRequest {
+  string worker_id = 1;
+  string addr = 2;
+}
+
+message RegisterResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  int64 timestamp_ms = 2;
+}
+
+message HeartbeatResponse {
+  bool alive = 1;
+}
+
+message GetWorkRequest {
+  string worker_id = 1;
+}
+
+message GetWorkResponse {
+  repeated string files = 1; // shard atribuído a este worker
+  int32 shard_id = 2;
+  int32 total_shards = 3;
+}
+
+message ProgressRequest {
+  string worker_id = 1;
+  string file = 2;
+  int32 processed = 3;
+  int32 total = 4;
+  string status = 5; // "running" | "done" | "error"
+}
+
+message ProgressResponse {
+  bool ack = 1;
+}

@@ -1,0 +1,21 @@
+[package]
+name = "orquestracao-distribuido"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_tolerancia_falhas"
+path = "solucao/exercicio_tolerancia_falhas.rs"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.5.48", features = ["derive"] }
+prost = "0.13.5"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio-stream = "0.1.17"
+tonic = { version = "0.12.3", features = ["transport"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter"] }
+
+[build-dependencies]
+tonic-build = "0.12.3"

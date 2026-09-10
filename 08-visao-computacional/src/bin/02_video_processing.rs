@@ -66,7 +66,7 @@ fn gerar_frames_sinteticos(dir: &Path, n: usize) -> Result<Vec<PathBuf>> {
 mod opencv_impl {
     use super::*;
     use anyhow::Result;
-    use opencv::{prelude::*, videoio, imgproc, core};
+    use opencv::{core, imgproc, prelude::*, videoio};
 
     pub fn processar_video_opencv(input: &Path, output: &Path) -> Result<()> {
         let mut cap = videoio::VideoCapture::from_file(input.to_str().unwrap(), videoio::CAP_ANY)
@@ -107,7 +107,10 @@ mod opencv_impl {
             processed += 1;
         }
 
-        println!("OpenCV: {processed} frames processados → {}", output.display());
+        println!(
+            "OpenCV: {processed} frames processados → {}",
+            output.display()
+        );
         Ok(())
     }
 }
@@ -124,12 +127,16 @@ fn main() -> Result<()> {
             println!("Usando OpenCV (feature habilitada) para vídeo real");
             return opencv_impl::processar_video_opencv(&args.input, &args.output);
         } else {
-            println!("Input não é .mp4 ou não existe — caindo para fallback com imagens sintéticas");
+            println!(
+                "Input não é .mp4 ou não existe — caindo para fallback com imagens sintéticas"
+            );
         }
     }
 
     #[cfg(not(feature = "opencv"))]
-    println!("Feature `opencv` não habilitada — usando fallback `image` + `imageproc` (sem libopencv)");
+    println!(
+        "Feature `opencv` não habilitada — usando fallback `image` + `imageproc` (sem libopencv)"
+    );
 
     // Fallback: gera frames sintéticos e processa com imageproc
     let tmp_in = Path::new("dados/tmp_frames_in");
@@ -142,7 +149,11 @@ fn main() -> Result<()> {
             .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("jpg"))
             .collect::<Vec<_>>()
     } else {
-        println!("Gerando {} frames sintéticos em {}", args.frames, tmp_in.display());
+        println!(
+            "Gerando {} frames sintéticos em {}",
+            args.frames,
+            tmp_in.display()
+        );
         gerar_frames_sinteticos(tmp_in, args.frames)?
     };
 
@@ -150,18 +161,25 @@ fn main() -> Result<()> {
     std::fs::create_dir_all(args.output.parent().unwrap_or(Path::new("dados/saida")))?;
 
     for (i, frame_path) in frames.iter().enumerate() {
-        let img = image::open(frame_path)
-            .with_context(|| format!("abrindo {}", frame_path.display()))?;
+        let img =
+            image::open(frame_path).with_context(|| format!("abrindo {}", frame_path.display()))?;
         let processed = aplicar_canny(&img);
         let out_path = tmp_out.join(format!("frame_{i:04}_edges.jpg"));
         processed.save(&out_path)?;
         if i % 5 == 0 {
-            println!("  frame {i}: {} → {}", frame_path.display(), out_path.display());
+            println!(
+                "  frame {i}: {} → {}",
+                frame_path.display(),
+                out_path.display()
+            );
         }
     }
 
     // Também salva um "vídeo" simulado como diretório de frames + log
-    println!("\nVídeo processado como sequência de frames em {}", tmp_out.display());
+    println!(
+        "\nVídeo processado como sequência de frames em {}",
+        tmp_out.display()
+    );
     println!("Para vídeo real .mp4, habilite feature `opencv` e forneça .mp4:");
     println!("  cargo run --features opencv --bin 02_video_processing -- --input video.mp4 --output out.mp4");
     println!("✓ Processamento concluído");

@@ -63,7 +63,8 @@ fn gerar_imagem_sintetica(path: &Path) -> Result<()> {
         }
     }
     std::fs::create_dir_all(path.parent().unwrap())?;
-    img.save(path).with_context(|| format!("salvando {}", path.display()))?;
+    img.save(path)
+        .with_context(|| format!("salvando {}", path.display()))?;
     println!("Imagem sintética gerada em {}", path.display());
     Ok(())
 }
@@ -94,7 +95,10 @@ fn preprocess(img: &DynamicImage) -> Vec<f32> {
 
 fn inferir_ort(_chw: &[f32], img_w: u32, img_h: u32, model_path: &Path) -> Result<Vec<Detection>> {
     if !model_path.exists() {
-        println!("Modelo {} não encontrado — simulando detecções", model_path.display());
+        println!(
+            "Modelo {} não encontrado — simulando detecções",
+            model_path.display()
+        );
         // Simula 2 detecções
         return Ok(vec![
             Detection {
@@ -169,8 +173,8 @@ fn main() -> Result<()> {
         gerar_imagem_sintetica(&args.image)?;
     }
 
-    let dyn_img = image::open(&args.image)
-        .with_context(|| format!("abrindo {}", args.image.display()))?;
+    let dyn_img =
+        image::open(&args.image).with_context(|| format!("abrindo {}", args.image.display()))?;
     let (w, h) = dyn_img.dimensions();
     println!("Imagem carregada: {w}x{h}, {:?}", dyn_img.color());
 
@@ -179,7 +183,10 @@ fn main() -> Result<()> {
 
     let detections = inferir_ort(&chw, w, h, &args.model)?;
     println!("\nDetecções: {} (conf>={})", detections.len(), args.conf);
-    let filtradas: Vec<Detection> = detections.into_iter().filter(|d| d.conf >= args.conf).collect();
+    let filtradas: Vec<Detection> = detections
+        .into_iter()
+        .filter(|d| d.conf >= args.conf)
+        .collect();
     println!("Filtradas: {}", filtradas.len());
 
     let rgb = dyn_img.to_rgb8();

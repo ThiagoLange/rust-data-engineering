@@ -64,20 +64,31 @@ fn processar_video(video_dir: &Path, csv_saida: &Path, classe_alvo: &str) -> Res
         v.sort();
         v
     } else {
-        println!("Vídeo não encontrado, gerando 10 frames sintéticos em {}", video_dir.display());
+        println!(
+            "Vídeo não encontrado, gerando 10 frames sintéticos em {}",
+            video_dir.display()
+        );
         gerar_frames_sinteticos(video_dir, 10)?
     };
 
-    println!("Processando {} frames para classe '{}'", frames.len(), classe_alvo);
+    println!(
+        "Processando {} frames para classe '{}'",
+        frames.len(),
+        classe_alvo
+    );
 
     let mut serie: Vec<(usize, usize)> = Vec::new(); // (frame_idx, count)
 
     for (idx, frame_path) in frames.iter().enumerate() {
-        let img = image::open(frame_path)
-            .with_context(|| format!("abrindo {}", frame_path.display()))?;
+        let img =
+            image::open(frame_path).with_context(|| format!("abrindo {}", frame_path.display()))?;
         let dets = detectar_frame(idx, &img);
         let count = dets.iter().filter(|d| d.classe == classe_alvo).count();
-        println!("  frame {idx}: {} objetos (total dets={}, alvo={count})", dets.len(), count);
+        println!(
+            "  frame {idx}: {} objetos (total dets={}, alvo={count})",
+            dets.len(),
+            count
+        );
         serie.push((idx, count));
     }
 

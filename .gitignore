@@ -6,3 +6,6 @@
 02-processamento-dados/dados/saida/
 03-armazenamento-formatos/dados/saida/
 04-streaming/dados/saida/
+06-machine-learning/models/*.json
+06-machine-learning/models/*.onnx
+06-machine-learning/dados/saida/

@@ -14,22 +14,27 @@
 
 Para a maioria dos casos de engenharia de dados com ML embutido: treine em Python (ecossistema mais maduro), exporte para ONNX, e sirva a inferência em Rust via `ort` — combina produtividade de treino com performance de inferência. Use `linfa`/`candle`/`burn` diretamente quando quiser um pipeline 100% Rust, sem dependência de Python em produção.
 
-## Exemplo prático 1: Classificador com linfa
+## Exemplos práticos
 
-`src/linfa_classifier.rs`: treinar um classificador (regressão logística) sobre um dataset Parquet do Módulo 3, avaliar métricas (accuracy, F1), e salvar o modelo.
-
-## Exemplo prático 2: Inferência ONNX
-
-`src/onnx_inference.rs`: carregar um modelo ONNX exportado do PyTorch (fornecido em `models/`) e rodar inferência em batch sobre dados do pipeline, integrando com Polars para pré-processamento.
+| Binário | Arquivo | O que demonstra |
+|---------|---------|----------------|
+| `01_linfa_classifier` | `src/bin/01_linfa_classifier.rs` | **Classificação logística** com `linfa` sobre Parquet do Módulo 3 (`quantidade` + `preco_unitario` → `is_high_value`); `split_with_ratio`, `confusion_matrix`, `accuracy`/`F1`/`MCC`, salva `models/linfa_model.json` |
+| `02_regressao_linear` | `src/bin/02_regressao_linear.rs` | **Regressão linear** com `linfa-linear` — sintético `y=2.5x+3` e vendas (`quantidade → preco_unitario`); métricas `RMSE`/`R²`, salva `models/linear_model.json` |
+| `03_onnx_inference` | `src/bin/03_onnx_inference.rs` | **Classificação via ONNX** — `ort` 2.0 (`Session::builder`, `Tensor::from_array`, `inputs!`) + `Polars` para pré-processamento; fallback sintético se `models/classifier.onnx` não existir; batch 32 |
 
 ```bash
-cargo run --bin linfa_classifier
-cargo run --bin onnx_inference -- --model models/classifier.onnx
+cargo run --bin 01_linfa_classifier
+cargo run --bin 02_regressao_linear
+cargo run --bin 03_onnx_inference -- --model models/classifier.onnx --batch-size 32
 ```
 
 ## Exercício
 
-Compare o tempo de inferência (latência p50/p99) entre um modelo rodando nativamente em `candle` vs o mesmo modelo via `ort`/ONNX, sobre o mesmo batch de dados. Documente os trade-offs observados. Solução em `solucoes/06-machine-learning`.
+Compare o tempo de inferência (latência p50/p99) entre um modelo rodando nativamente em `candle` (`candle-core` + `candle-nn`, `Device::Cpu`, `sigmoid`) vs o mesmo modelo via `ort`/ONNX (simulado com `ndarray`), sobre o mesmo batch de dados. Documente os trade-offs observados. Solução em `solucao/exercicio_candle_vs_ort.rs` (bin `exercicio_candle_vs_ort`) — 200 iterações, `percentil`, `max_diff <1e-5`.
+
+```bash
+cargo run --bin exercicio_candle_vs_ort
+```
 
 ## Leituras complementares
 

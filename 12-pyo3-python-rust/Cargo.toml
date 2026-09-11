@@ -1,0 +1,22 @@
+[package]
+name = "pyo3-python-rust"
+version = "0.1.0"
+edition = "2021"
+
+# `extension-module` NÃO vai no default: ele impede linkar a libpython,
+# quebrando `cargo run`/`cargo test`. Ative só ao gerar o `.so`:
+# `maturin develop --features extension-module`.
+[features]
+extension-module = ["pyo3/extension-module"]
+
+[[bin]]
+name = "exercicio_python_extension"
+path = "solucao/exercicio_python_extension.rs"
+
+[dependencies]
+anyhow = "1.0"
+pyo3 = { version = "0.23", features = ["abi3-py38", "auto-initialize"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+polars = { version = "0.55", features = ["json", "csv"] }
+thiserror = "2.0"

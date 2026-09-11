@@ -1,0 +1,14 @@
+[package]
+name = "llm-evaluation"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_rag_eval_suite"
+path = "solucao/exercicio_rag_eval_suite.rs"
+
+[dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"

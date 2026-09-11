@@ -1,0 +1,16 @@
+[package]
+name = "dag-orchestration"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_pipeline_backfill"
+path = "solucao/exercicio_pipeline_backfill.rs"
+
+[dependencies]
+anyhow = "1.0"
+petgraph = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "sync", "time"] }

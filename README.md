@@ -34,6 +34,10 @@ Cada módulo é auto-contido: teoria curta + exemplos de código rodáveis + exe
 | 09 | [Visualização de Dados](./09-visualizacao-dados) | Intermediário | plotters, egui, dashboards |
 | 10 | [Observabilidade e Produção](./10-observabilidade-producao) | Avançado | tracing, criterion, deploy |
 | 11 | [Projetos Integradores](./11-projetos-integradores) | Avançado | Pipelines fim-a-fim combinando tudo |
+| 12 | [PyO3: Ponte Python ↔ Rust](./12-pyo3-python-rust) | Avançado | Extensões Python em Rust, Polars + serde via PyO3 |
+| 13 | [Contratos e Qualidade de Dados](./13-data-contracts) | Intermediário | Schema registry, checks de qualidade, pipeline estrito |
+| 14 | [Orquestração de Pipelines (DAGs)](./14-dag-orchestration) | Avançado | DAGs com petgraph, retry/backoff, circuit breaker, backfill |
+| 15 | [Avaliação de LLM e RAG](./15-llm-evaluation) | Avançado | recall/faithfulness/groundedness, custo e latência, gate de CI |
 
 ## Estado do ecossistema
 

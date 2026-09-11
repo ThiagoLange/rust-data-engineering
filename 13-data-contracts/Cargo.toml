@@ -1,0 +1,18 @@
+[package]
+name = "data-contracts"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "exercicio_pipeline_estrict"
+path = "solucao/exercicio_pipeline_estrict.rs"
+
+[dependencies]
+anyhow = "1.0"
+arrow = "58.0"
+arrow-array = "58.0"
+arrow-schema = "58.0"
+polars = { version = "0.55", features = ["csv", "lazy", "parquet"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"

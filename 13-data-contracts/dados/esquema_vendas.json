@@ -1,0 +1,1 @@
+{"schema":"vendas","campos":["id","produto","valor","regiao"],"tipos":["int64","string","float64","string"],"constraints":{"id":{"unique":true,"required":true},"valor":{"min":0,"max":10000}}}

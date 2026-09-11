@@ -30,6 +30,7 @@ Ambos resolvem o mesmo problema (transações ACID sobre object storage), com tr
 | `07_arrow_ipc_escrita_leitura` | `src/bin/07_arrow_ipc_escrita_leitura.rs` | Arrow IPC File vs Stream (`FileWriter`/`StreamWriter`, `FileReader`/`StreamReader`), zero-copy/mmap |
 | `08_iceberg_basico` | `src/bin/08_iceberg_basico.rs` | `MemoryCatalog` Iceberg, namespace, tabela particionada (hidden partitioning), evolução de schema |
 | `09_ailake_demo` | `src/bin/09_ailake_demo.rs` | Parquet + `key_value_metadata` simulando footer HNSW — padrão AI Lake (ver Módulo 11) |
+| `10_iceberg_rest_catalog` | `src/bin/10_iceberg_rest_catalog.rs` | Mesmo fluxo do `08` contra catálogo Iceberg **REST** (`iceberg-catalog-rest` + fixture Docker): `location` decidida pelo servidor, commit transacional via HTTP |
 | `parquet_etl` | `src/bin/parquet_etl.rs` | Pipeline ETL: CSV → Parquet particionado manualmente por `regiao=XXX` e leitura recursiva |
 
 ```bash
@@ -43,6 +44,12 @@ cargo run --bin 07_arrow_ipc_escrita_leitura
 cargo run --bin 08_iceberg_basico
 cargo run --bin 09_ailake_demo
 cargo run --bin parquet_etl
+
+# Catálogo REST (precisa do servidor local):
+docker compose up -d   # apache/iceberg-rest-fixture em :8181
+cargo run --bin 10_iceberg_rest_catalog
+# Aponte para outro catálogo sem mudar o código:
+ICEBERG_REST_URI=http://meu-lakekeeper:8181 cargo run --bin 10_iceberg_rest_catalog
 ```
 
 ## Exercício
@@ -57,6 +64,8 @@ cargo run --bin exercicio_delta_merge_timetravel
 
 - [delta-rs](https://github.com/delta-io/delta-rs)
 - [iceberg-rust](https://github.com/apache/iceberg-rust)
+- [iceberg-catalog-rest (docs)](https://rust.iceberg.apache.org/api/iceberg_catalog_rest)
+- [Iceberg REST catalog spec](https://iceberg.apache.org/docs/latest/configuration/#rest-catalog)
 - [object_store crate](https://docs.rs/object_store)
 - [apache-avro](https://docs.rs/apache-avro)
 - [arrow-ipc](https://docs.rs/arrow-ipc)

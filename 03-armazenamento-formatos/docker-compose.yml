@@ -1,0 +1,14 @@
+# Módulo 03 — catálogo Iceberg REST (fixture oficial Apache, sem auth).
+#
+# Sobe em http://localhost:8181 (ver README, `10_iceberg_rest_catalog`).
+# O fixture guarda metadata em memória: ao derrubar o container, o estado some.
+# Para persistência real, troque por um catálogo REST com backend (ex: Lakekeeper,
+# Gravitino ou AWS S3Tables) mantendo o mesmo `ICEBERG_REST_URI`.
+services:
+  iceberg-rest:
+    image: apache/iceberg-rest-fixture:latest
+    container_name: iceberg-rest-fixture
+    ports:
+      - "8181:8181"
+    environment:
+      - AWS_REGION=us-east-1

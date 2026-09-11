@@ -229,7 +229,7 @@ mod tests {
             .unwrap()
             .build()
             .unwrap();
-        let ident = TableIdent::new(ns.clone(), "vendas".to_string());
+        let _ident = TableIdent::new(ns.clone(), "vendas".to_string());
         let creation = TableCreation::builder()
             .name("vendas".to_string())
             .schema(schema)

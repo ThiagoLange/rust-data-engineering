@@ -4,7 +4,6 @@
 //!
 //! Roda como binário puro (`cargo run`) e como módulo Python (`maturin develop`
 /// depois `import rust_module`).
-
 use anyhow::Result;
 use polars::prelude::*;
 use pyo3::prelude::*;
@@ -29,10 +28,7 @@ fn aggregate_values(values: &[f64]) -> Result<AggregationResult> {
         anyhow::bail!("lista vazia");
     }
     // Polars como motor de agregação (mesmo para slices pequenos, demonstra o padrão).
-    let df = DataFrame::new(
-        values.len(),
-        vec![Column::new("valor".into(), values)],
-    )?;
+    let df = DataFrame::new(values.len(), vec![Column::new("valor".into(), values)])?;
     let summary: Vec<f64> = df
         .column("valor")
         .map_err(|e| anyhow::anyhow!("coluna valor: {e}"))?
